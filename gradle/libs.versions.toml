@@ -1,0 +1,7 @@
+[versions]
+reactorNettyVersion = "1.1.17"
+
+[libraries]
+reactor-auth-core = { module = "io.projectreactor.auth:reactor-auth-core", version.ref = "reactorNettyVersion" }
+reactor-auth-http = { module = "io.projectreactor.auth:reactor-auth-http", version.ref = "reactorNettyVersion" }
+reactor-auth = { module = "io.projectreactor.auth:reactor-auth", version.ref = "reactorNettyVersion" }
