@@ -50,32 +50,35 @@ public final class SequentialRestRateLimiter implements RestRateLimiter {
         return config;
     }
 
-    public abstract class Bucket implements Runnable {
+    private long getNow() {
+        return System.currentTimeMillis();
+    }
+
+    protected abstract class Bucket implements Runnable {
         protected final String bucketId;
+        protected final Deque<? super HttpServerRequest> requests = new ConcurrentLinkedDeque<>();
 
         protected Bucket(String bucketId) {
             this.bucketId = bucketId;
         }
 
-        public abstract long getGlobalRateLimit(long now);
+        protected abstract long getGlobalRateLimit(long now);
+
+        public boolean isUnited() {
+            return this.bucketId.startsWith(UNINIT_BUCKET);
+        }
+
+        public void enqueue(HttpServerRequest request) {
+            this.requests.addLast(request);
+        }
+
+        public void retry(HttpServerRequest request) {
+            this.requests.addFirst(request);
+        }
 
         @Override
         public void run() {
 
-        }
-    }
-
-    private class ClassicBucket extends Bucket {
-        private final @NotNull RestRateLimiter.GlobalRateLimit holder;
-
-        protected ClassicBucket(String bucketId) {
-            super(bucketId);
-            this.holder = config.getGlobalRateLimit();
-        }
-
-        @Override
-        public long getGlobalRateLimit(long now) {
-            return Math.max(holder.getClassic(), holder.getCloudflare()) - now;
         }
 
         @Override
@@ -98,7 +101,21 @@ public final class SequentialRestRateLimiter implements RestRateLimiter {
         }
     }
 
-    private class InteractionBucket extends Bucket {
+    public class ClassicBucket extends Bucket {
+        private @NotNull RestRateLimiter.GlobalRateLimit holder;
+
+        protected ClassicBucket(String bucketId) {
+            super(bucketId);
+            this.holder = config.getGlobalRateLimit();
+        }
+
+        @Override
+        public long getGlobalRateLimit(long now) {
+            return Math.max(holder.getClassic(), holder.getCloudflare()) - now;
+        }
+    }
+
+    public class InteractionBucket extends Bucket {
 
         protected InteractionBucket(String bucketId) {
             super(bucketId);
