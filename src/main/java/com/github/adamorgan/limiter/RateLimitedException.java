@@ -1,4 +1,4 @@
-package com.github.adamorgan.limiter.api.requests;
+package com.github.adamorgan.limiter;
 
 import org.jetbrains.annotations.NotNull;
 import reactor.netty.http.server.HttpServerRequest;

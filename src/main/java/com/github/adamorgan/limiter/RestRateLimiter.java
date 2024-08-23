@@ -1,8 +1,8 @@
-package com.github.adamorgan.limiter.api.requests;
+package com.github.adamorgan.limiter;
 
-import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.NonBlocking;
 import org.jetbrains.annotations.NotNull;
+import reactor.core.publisher.Mono;
 import reactor.netty.http.server.HttpServerRequest;
 import reactor.netty.http.server.HttpServerResponse;
 
@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Interface used to handle requests to the Reactor Netty.
- * <p>Requests are handed to the rate-limiter via {@link #enqueue(Work)} and executed using {@link Work#execute()}.
+ * <p>Requests are handed to the rate-limiter via {@link #enqueue(RateLimit)} and executed using {@link RateLimit#execute()}.
  * The rate-limiter is responsible to ensure that requests do not exceed the rate-limit set by {@link RateLimitConfig}.
  */
 public interface RestRateLimiter {
@@ -36,12 +36,12 @@ public interface RestRateLimiter {
     /**
      * Enqueue a new request.
      *
-     * <p>Use {@link Work#getRoute()} to determine the correct bucket.
+     * <p>Use {@link RateLimit#getRoute()} to determine the correct bucket.
      *
      * @param task
-     *        The {@link Work} to enqueue
+     *        The {@link RateLimit} to enqueue
      */
-    void enqueue(@NotNull Work task);
+    void enqueue(@NotNull RestRateLimiter.RateLimit task);
 
     /**
      * Indication to stop accepting new reqzuests.
@@ -61,7 +61,7 @@ public interface RestRateLimiter {
     boolean isStopped();
 
     /**
-     * Cancel all currently queued requests, which are not marked as {@link Work#isPriority() priority}.
+     * Cancel all currently queued requests, which are not marked as {@link RateLimit#isPriority() priority}.
      *
      * @return The number of cancelled requests
      */
@@ -72,7 +72,7 @@ public interface RestRateLimiter {
      *
      * <p>Use {@link #execute()} to run the request (on the calling thread) and {@link #isDone()} to discard it once completed.
      */
-    interface Work {
+    interface RateLimit {
         /**
          * The {@link HttpServerRequest request} of the request.
          * <br>This is primarily used to handle rate-limit buckets.
@@ -130,18 +130,28 @@ public interface RestRateLimiter {
         boolean isCancelled();
 
         /**
-         * Cancel the request.
-         * <br>Primarily used for {@link JDA#cancelRequests()}.
+         * Used to execute a Request. Processes request related to provided bucket.
+         *
+         * @param  handleOnRateLimit
+         *         Whether to forward rate-limits, false if rate limit handling should take over
+         *
+         * @return Non-null if the request was ratelimited. Returns a Long containing retry_after milliseconds until
+         *         the request can be made again. This could either be for the Per-Route ratelimit or the Global ratelimit.
          */
-        void cancel();
+        Mono<Void> handle(boolean handleOnRateLimit);
+
+        /**
+         * Cancel the request.
+         * <br>Primarily used for {@link SequentialRestRateLimiter#cancelRequests()}.
+         */
+        Mono<Void> cancel();
     }
 
     /**
      * Global rate-limit store.
      * <br>This can be used to share the global rate-limit information between multiple instances.
      */
-    interface GlobalRateLimit
-    {
+    interface GlobalRateLimit {
         /**
          * The current global rate-limit reset time.
          * <br>This is the rate-limit applied on the bot token.
@@ -189,27 +199,23 @@ public interface RestRateLimiter {
                 private final AtomicLong cloudflare = new AtomicLong(-1);
 
                 @Override
-                public long getClassic()
-                {
+                public long getClassic() {
                     return classic.get();
                 }
 
                 @Override
-                public void setClassic(long timestamp)
-                {
+                public void setClassic(long timestamp) {
                     classic.set(timestamp);
                 }
 
                 @Override
-                public long getCloudflare()
-                {
+                public long getCloudflare() {
                     return cloudflare.get();
                 }
 
                 @Override
-                public void setCloudflare(long timestamp)
-                {
-                    cloudflare.set(timestamp);
+                public void setCloudflare(long timestamp) {
+                    classic.set(timestamp);
                 }
             };
         }
