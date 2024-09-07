@@ -27,7 +27,7 @@ public final class SequentialRestRateLimiter implements RestRateLimiter {
     }
 
     @Override
-    public void enqueue(@NotNull RestRateLimiter.RateLimit task) {
+    public void enqueue(@NotNull RestRateLimiter.RateLimit limit) {
 
     }
 
