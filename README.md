@@ -3,7 +3,7 @@ Rate limits exist across API`s to prevent spam, abuse, and service overload. Lim
 
 > Because rate limits depend on a variety of factors and are subject to change, **rate limits should not be hard coded into your app. Instead, your app** should parse response headers to prevent hitting the limit, and to respond accordingly in case you do.
 
-**Per-route rate limits** exist for many individual endpoints, and may include the HTTP method (GET, POST, PUT, or DELETE). In some cases, per-route limits will be shared across a set of similar endpoints, indicated in the X-RateLimit-Bucket header. It's recommended to use this header as a unique identifier for a rate limit, which will allow you to group shared limits as you encounter them.
+**Per-route rate limits** exist for many individual endpoints, and may include the HTTP method (``GET``, ``POST``, ``PUT``, or ``DELETE``). In some cases, per-route limits will be shared across a set of similar endpoints, indicated in the ``X-RateLimit-Bucket`` header. It's recommended to use this header as a unique identifier for a rate limit, which will allow you to group shared limits as you encounter them.
 
 During calculation, per-route rate limits often account for top-level resources within the path using an identifier. This means that an endpoint with two different top-level resources may calculate limits independently. As an example, if you exceeded a rate limit when calling one endpoint, you could still call another similar endpoint like without a problem.
 
@@ -32,7 +32,7 @@ X-RateLimit-Bucket: abcd1234
 
 ## Exceeding A Rate Limit
 
-In the case that a rate limit is exceeded, the API will return a HTTP 429 response code with a JSON body. Your application should rely on the Retry-After header or retry_after field to determine when to retry the request.
+In the case that a rate limit is exceeded, the API will return a HTTP 429 response code with a JSON body. Your application should rely on the ``Retry-After`` header or ``retry_after`` field to determine when to retry the request.
 
 #### Rate Limit Response Structure
 
@@ -121,7 +121,7 @@ All applications should make reasonable attempts to avoid making invalid request
 
 - 401 responses are avoided by providing a valid token in the authorization header when required and by stopping further requests after a token becomes invalid
 - 403 responses are avoided by inspecting role or channel permissions and by not making requests that are restricted by such permissions 
-- 429 responses are avoided by inspecting the rate limit headers documented above and by not making requests on exhausted buckets until after they have reset. 429 errors returned with X-RateLimit-Scope: shared are not counted against you.
+- 429 responses are avoided by inspecting the rate limit headers documented above and by not making requests on exhausted buckets until after they have reset. 429 errors returned with ``X-RateLimit-Scope: shared`` are not counted against you.
 
 Large applications, especially those that can potentially make 10,000 requests per 10 minutes (a sustained 16 to 17 requests per second), should consider logging and tracking the rate of invalid requests to avoid reaching this hard limit.
 
