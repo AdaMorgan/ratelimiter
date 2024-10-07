@@ -7,17 +7,30 @@ import reactor.netty.http.server.HttpServerRequest;
  * Indicates that we received a {@code 429: Too Many Requests} response
  */
 public class RateLimitedException extends Exception {
-    private final String rateLimitedRoute;
     private final long retryAfter;
+    private final boolean isGlobal;
+    private final HttpServerRequest request;
 
     public RateLimitedException(@NotNull HttpServerRequest request, long retryAfter) {
-        this(request.path(), retryAfter);
+        this(request, retryAfter, true);
     }
 
-    public RateLimitedException(String path, long retryAfter) {
-        super(String.format("The request was ratelimited! Retry-After: %d  Route: %s", retryAfter, path));
-        this.rateLimitedRoute = path;
+    public RateLimitedException(@NotNull HttpServerRequest request, long retryAfter, boolean isGlobal) {
+        super(String.format("The request was ratelimited! Retry-After: %d  Route: %s", retryAfter, request.path()));
+        this.request = request;
         this.retryAfter = retryAfter;
+        this.isGlobal = isGlobal;
+    }
+
+    public RateLimitedException(@NotNull HttpServerRequest request, String message, long retryAfter, boolean isGlobal) {
+        super(message);
+        this.request = request;
+        this.retryAfter = retryAfter;
+        this.isGlobal = isGlobal;
+    }
+
+    public boolean isGlobal() {
+        return isGlobal;
     }
 
     /**
@@ -26,8 +39,8 @@ public class RateLimitedException extends Exception {
      *
      * @return The corresponding route
      */
-    public String getRateLimitedRoute() {
-        return rateLimitedRoute;
+    public HttpServerRequest getRateLimitedRoute() {
+        return this.request;
     }
 
     /**

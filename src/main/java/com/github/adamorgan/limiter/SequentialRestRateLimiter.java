@@ -68,6 +68,10 @@ public final class SequentialRestRateLimiter implements RestRateLimiter {
             return this.bucketId.startsWith(UNINIT_BUCKET);
         }
 
+        public boolean isGlobalRateLimit() {
+            return getGlobalRateLimit(getNow()) > 0;
+        }
+
         public void enqueue(HttpServerRequest request) {
             this.requests.addLast(request);
         }
@@ -102,7 +106,7 @@ public final class SequentialRestRateLimiter implements RestRateLimiter {
     }
 
     public class ClassicBucket extends Bucket {
-        private @NotNull RestRateLimiter.GlobalRateLimit holder;
+        private final @NotNull RestRateLimiter.GlobalRateLimit holder;
 
         protected ClassicBucket(String bucketId) {
             super(bucketId);
